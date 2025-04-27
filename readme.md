@@ -125,10 +125,7 @@ TEST(scruffy, pointers) {
   EXPECT_NOT_NULL(p);
 }
 
-int main() {
-  RUN_ALL();
-  return test_failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
-}
+RUN_ALL();
 ```
 
 # MIT License

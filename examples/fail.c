@@ -1,5 +1,4 @@
 #include "scruffy/scruffy.h"
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,7 +14,12 @@ TEST(scruffy, equals) {
   EXPECT_EQ(1, 2);
 }
 
+// calling a function
+bool test_true() { return true; }
+
 TEST(scruffy, bools) {
+  EXPECT_TRUE(test_true());
+  EXPECT_FALSE(test_true());
   EXPECT_TRUE(1 == 2);
   EXPECT_FALSE(1 == 1);
 }
@@ -29,7 +33,4 @@ TEST(scruffy, pointers) {
   EXPECT_NULL(p);
 }
 
-int main() {
-  RUN_ALL();
-  return test_failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
-}
+RUN_ALL();
