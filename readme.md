@@ -5,54 +5,80 @@
 write a lot of C code and wanted somethig similar. This 
 provides the majority of what I do for testing.
 
-> Grok helped me write these and I fine tuned them
+> Grok helped me write these and I fine tuned and adjusted
+> them to my liking
 
 ## Output
 
 Success
 
 ```bash
-[==========] Running 2 tests from 1 test suite.
+[==========] Starting tests
 [----------] Global test environment set-up.
-[----------] 2 tests from SampleTest
-[ RUN      ] SampleTest.Test1
-[       OK ] SampleTest.Test1 (0 ms)
-[ RUN      ] SampleTest.Test2
-[       OK ] SampleTest.Test2 (0 ms)
-[----------] 2 tests from SampleTest (0 ms total)
+[ RUN      ] scruffy.floats
+[       OK ] 2 / 2 tests passed (1 usec)
+[----------]
+[ RUN      ] scruffy.equals
+[       OK ] 3 / 3 tests passed (1 usec)
+[----------]
+[ RUN      ] scruffy.bools
+[       OK ] 5 / 5 tests passed (2 usec)
+[----------]
+[ RUN      ] scruffy.pointers
+[       OK ] 7 / 7 tests passed (1 usec)
+[----------]
 [----------] Global test environment tear-down
-[==========] 2 tests from 1 test suite ran. (0 ms total)
-[  PASSED  ] 2 tests.
+[==========] 7 out of 7 total tests passed (28 usec total)
 ```
 
 Failure
 
 ```bash
-[==========] Running 1 test from 1 test suite.
+[==========] Starting tests
 [----------] Global test environment set-up.
-[----------] 1 test from SampleTest
-[ RUN      ] SampleTest.Test3
-path/to/your/test.cpp:5: Failure
-Value of: 1
-Expected: 2
-To be equal to: 2
-[  FAILED  ] SampleTest.Test3 (0 ms)
-[----------] 1 test from SampleTest (0 ms total)
+[ RUN      ] scruffy.floats
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 7 
+Expected a == 3.1f, got 3.120000 != 3.100000 (diff 0.020000 > 0.000010)
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 10 
+Expected b == 12.345, got 12.345670 != 12.345000 (diff 0.000670 > 0.000000)
+
+[  FAILED  ] 0 / 2 tests passed (9 usec)
+[----------]
+[ RUN      ] scruffy.equals
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 14 
+Expected 1 == 2, got 1 != 2
+
+[  FAILED  ] 0 / 3 tests passed (3 usec)
+[----------]
+[ RUN      ] scruffy.bools
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 22 
+Expected (test_true()) == false
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 23 
+Expected (1 == 2) == true
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 24 
+Expected (1 == 1) == false
+
+[  FAILED  ] 1 / 7 tests passed (4 usec)
+[----------]
+[ RUN      ] scruffy.pointers
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 29 
+Expected (p) == NULL
+
+file: /Users/kevin/github/scruffy/examples/fail.c line: 33 
+Expected (p) != NULL
+
+[  FAILED  ] 1 / 9 tests passed (6 usec)
+[----------]
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (0 ms total)
-[  FAILED  ] 1 test, listed below:
-[  FAILED  ] SampleTest.Test3
-
-1 FAILED TEST
+[==========] 8 out of 9 total tests failed (40 usec total)
 ```
-
-Each macro is wrapped in a `do {...} while(0)` loop to avoid problems. 
-
-- Ensures `EXPECT_` acts like single statement
-- Avoids dangling `else` problems (see below)
-- Ensures proper scope for temporary variables in the testing framework
-- Properly consumes the semicolon at the end of `EXPECT_` statements
-- No performance overhead, since compilers will optimize it away
 
 ## Tests
 
@@ -66,6 +92,15 @@ Each macro is wrapped in a `do {...} while(0)` loop to avoid problems.
 - `TEST(suite, test)`: creates a test function named 
   `void suite_test(void)` and registers the function 
 - `RUN_ALL()`: runs all test functions and prints results
+
+
+Each macro is wrapped in a `do {...} while(0)` loop to avoid problems. 
+
+- Ensures `EXPECT_` acts like single statement
+- Avoids dangling `else` problems (see below)
+- Ensures proper scope for temporary variables in the testing framework
+- Properly consumes the semicolon at the end of `EXPECT_` statements
+- No performance overhead, since compilers will optimize it away
 
 ## Limitations
 
