@@ -72,7 +72,7 @@ static int get_time_diff(struct timespec start, struct timespec end) {
     total_test_count++;                                                        \
     if ((ptr) != NULL) {                                                       \
       suite_failures++;                                                        \
-      TEST_DEBUG_MESSAGE("Expected (%s) != NULL", #ptr);                       \
+      TEST_DEBUG_MESSAGE("Expected %s[%p] == NULL", #ptr,ptr);                       \
     }                                                                          \
   } while (0)
 
@@ -81,7 +81,7 @@ static int get_time_diff(struct timespec start, struct timespec end) {
     total_test_count++;                                                        \
     if ((ptr) == NULL) {                                                       \
       suite_failures++;                                                        \
-      TEST_DEBUG_MESSAGE("Expected (%s) == NULL", #ptr);                       \
+      TEST_DEBUG_MESSAGE("Expected %s[%p] != NULL", #ptr,ptr);                       \
     }                                                                          \
   } while (0)
 
