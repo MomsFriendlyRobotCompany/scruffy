@@ -8,6 +8,49 @@ provides the majority of what I do for testing.
 > Grok helped me write these and I fine tuned and adjusted
 > them to my liking
 
+## CMake
+
+```cmake
+# Fetch scruffy for testing
+include(FetchContent)
+FetchContent_Declare(
+    scruffy
+    URL https://github.com/MomsFriendlyRobotCompany/scruffy/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(scruffy)
+
+# run all tests
+add_executable(test-all ${stests})
+target_link_libraries(test-all scruffy ... other libs ...)
+```
+
+## Simple Example
+
+```c
+#include <scruffy/scruffy.h>
+#include <ipc/ipc.h>
+
+TEST(mylib, dummy) {
+  EXPECT_TRUE(true);
+}
+
+TEST(mylib, somthing) {
+  EXPECT_FALSE(1, 22);
+  EXPECT_EQ(true, true);
+}
+
+TEST(mylib, other_thing) {
+  int *a = NULL
+  EXPECT_NULL(a);
+
+  float b = 1.2345;
+  float c = b * 2.0f / 2.0f;
+  EXPECT_FLOAT_EQ(b,c);
+}
+
+RUN_ALL()
+```
+
 ## Output
 
 Success
