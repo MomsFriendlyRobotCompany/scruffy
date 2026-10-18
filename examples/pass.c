@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-TEST(scruffy, floats) {
+TEST(scruffy_pass, floats) {
   float a = 3.12;
   EXPECT_FLOAT_EQ(a, 3.12f);
 
@@ -10,16 +10,16 @@ TEST(scruffy, floats) {
   EXPECT_DOUBLE_EQ(b, 12.34567);
 }
 
-TEST(scruffy, equals) {
+TEST(scruffy_pass, equals) {
   EXPECT_EQ(1, 1);
 }
 
-TEST(scruffy, bools) {
+TEST(scruffy_pass, bools) {
   EXPECT_TRUE(1 == 1);
   EXPECT_FALSE(1 == 2);
 }
 
-TEST(scruffy, pointers) {
+TEST(scruffy_pass, pointers) {
   int *p = NULL;
   EXPECT_NULL(p);
 
@@ -27,5 +27,3 @@ TEST(scruffy, pointers) {
   p     = &a;
   EXPECT_NOT_NULL(p);
 }
-
-RUN_ALL();

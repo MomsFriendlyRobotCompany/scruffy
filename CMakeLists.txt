@@ -7,7 +7,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 if(PROJECT_IS_TOP_LEVEL)
   cmake_host_system_information(RESULT HOST QUERY HOSTNAME)
-  # cmake_host_system_information(RESULT CORES QUERY NUMBER_OF_LOGICAL_CORES)
   cmake_host_system_information(RESULT OSN QUERY OS_NAME)
   cmake_host_system_information(RESULT OS_VERSION QUERY OS_RELEASE)
   cmake_host_system_information(RESULT PROC QUERY PROCESSOR_DESCRIPTION)
@@ -26,6 +25,32 @@ else()
   message(STATUS "-> ${PROJECT_NAME} is submodule")
   set(BUILD_EXAMPLES OFF)
 endif()
+
+# print some system info using CMake
+function(scruffy_info project_name)
+    get_property(enabled_langs GLOBAL PROPERTY ENABLED_LANGUAGES)
+
+    if("CXX" IN_LIST enabled_langs)
+        target_compile_definitions(${project_name} PRIVATE
+            CXX_INFO="C++${CMAKE_CXX_STANDARD} ${CMAKE_CXX_COMPILER_ID}: ${CMAKE_CXX_COMPILER}")
+    endif()
+
+    if("C" IN_LIST enabled_langs)
+        target_compile_definitions(${project_name} PRIVATE 
+            C_INFO="C${CMAKE_C_STANDARD} ${CMAKE_C_COMPILER_ID}: ${CMAKE_C_COMPILER}")
+    endif()
+
+    cmake_host_system_information(RESULT TOTAL_MEM  QUERY TOTAL_PHYSICAL_MEMORY)
+    cmake_host_system_information(RESULT OS_NAME    QUERY OS_NAME)
+    cmake_host_system_information(RESULT OS_VERSION QUERY OS_VERSION)
+    cmake_host_system_information(RESULT OS_RELEASE QUERY OS_RELEASE)
+    cmake_host_system_information(RESULT PROC       QUERY PROCESSOR_DESCRIPTION)
+    target_compile_definitions(${project_name} PRIVATE
+        OS_INFO="${OS_NAME} ${OS_RELEASE} [${OS_VERSION}]"
+        CPU_INFO="CPU: ${PROC}"
+        RAM_INFO="RAM: ${TOTAL_MEM} MB"
+    )
+endfunction()
 
 add_library(${PROJECT_NAME} 
     src/scruffy.c

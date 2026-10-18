@@ -46,10 +46,58 @@ static int get_time_diff(struct timespec start, struct timespec end) {
                (end.tv_nsec - start.tv_nsec) / 1e3);
 }
 
+static
+const char* get_target() {
+  #if defined(__x86_64__) || defined(_M_X64)
+    return "Target is 64-bit Intel/AMD x86";
+  #elif defined(__i386__) || defined(_M_IX86)
+    return "Target is 32-bit Intel/AMD x86";
+  #elif defined(__aarch64__) || defined(_M_ARM64)
+    return "Target is 64-bit ARM";
+  #elif defined(__arm__) || defined(_M_ARM)
+    return "Target is 32-bit ARM";
+  #else
+    return "Target is Uknown";
+  #endif
+}
+
+
+#define TEST_MESSAGE(color, format, ...)                     \
+  do {                                                       \
+    printf("%s" format SCRUFFY_RESET, color, ##__VA_ARGS__); \
+  } while (0)
+
+static
+void print_info() {
+  const char* c = SCRUFFY_CYAN;
+  TEST_MESSAGE(c, "======================================\n");
+  #ifdef OS_INFO
+  TEST_MESSAGE(c, "%s\n", OS_INFO);
+  TEST_MESSAGE(c, "%s\n", CPU_INFO);
+  TEST_MESSAGE(c, "%s\n", RAM_INFO);
+  #endif
+
+  TEST_MESSAGE(c, "Compilers:\n");
+  #if defined(C_INFO)
+  TEST_MESSAGE(c, "  %s\n", C_INFO);
+  #endif
+  #if defined(CXX_INFO)
+  TEST_MESSAGE(c, "  %s\n", CXX_INFO);
+  #endif
+
+  #if __clang__
+  TEST_MESSAGE(c, "%s\n", get_target());
+  #endif
+  TEST_MESSAGE(c, "======================================\n");
+}
+
+
+
+
 // keep do loop - ensures test_failure++ is scoped with fprintf()
 #define TEST_DEBUG_MESSAGE(format, ...)                                        \
   do {                                                                         \
-    printf("\n%sfile: %s line: %d %s\n", SCRUFFY_CYAN, __FILE__, __LINE__,       \
+    printf("\n%sfile: %s line: %d %s\n", SCRUFFY_CYAN, __FILE__, __LINE__,     \
            SCRUFFY_RESET);                                                     \
     printf(format "\n", ##__VA_ARGS__);                                        \
     total_test_failures++;                                                     \
@@ -72,7 +120,7 @@ static int get_time_diff(struct timespec start, struct timespec end) {
     total_test_count++;                                                        \
     if ((ptr) != NULL) {                                                       \
       suite_failures++;                                                        \
-      TEST_DEBUG_MESSAGE("Expected %s[%p] == NULL", #ptr,ptr);                       \
+      TEST_DEBUG_MESSAGE("Expected %s[%p] == NULL", #ptr,ptr);                 \
     }                                                                          \
   } while (0)
 
@@ -81,7 +129,7 @@ static int get_time_diff(struct timespec start, struct timespec end) {
     total_test_count++;                                                        \
     if ((ptr) == NULL) {                                                       \
       suite_failures++;                                                        \
-      TEST_DEBUG_MESSAGE("Expected %s[%p] != NULL", #ptr,ptr);                       \
+      TEST_DEBUG_MESSAGE("Expected %s[%p] != NULL", #ptr,ptr);                 \
     }                                                                          \
   } while (0)
 
@@ -196,6 +244,9 @@ static int get_time_diff(struct timespec start, struct timespec end) {
     struct timespec start, end;                                                \
     struct timespec total_start, total_end;                                    \
     clock_gettime(CLOCK_MONOTONIC, &total_start);                              \
+                                                                               \
+print_info(); \
+                                                                               \
     TEST_PASS_MESSAGE("[==========] Starting tests");                          \
     TEST_PASS_MESSAGE("[----------] Global test environment set-up.");         \
     for (size_t i = 0; i < test_registry_size; i++) {                          \
@@ -206,7 +257,7 @@ static int get_time_diff(struct timespec start, struct timespec end) {
       clock_gettime(CLOCK_MONOTONIC, &end);                                    \
       diff = get_time_diff(start, end);                                        \
       if (total_test_failures > 0)                                             \
-        TEST_FAIL_MESSAGE("\n[  FAILED  ] %d / %d tests passed (%d usec)",       \
+        TEST_FAIL_MESSAGE("\n[  FAILED  ] %d / %d tests passed (%d usec)",     \
                           total_test_count - total_test_failures,              \
                           total_test_count, diff);                             \
       else                                                                     \

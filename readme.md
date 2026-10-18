@@ -206,6 +206,10 @@ TEST(scruffy, pointers) {
 RUN_ALL();
 ```
 
+## ToDo:
+
+- [ ] Want to print some info about system, compiler, etc. 
+
 # MIT License
 
 **Copyright (c) 2025 Mom's Friendly Robot Company**

@@ -1,11 +1,8 @@
 
-list(APPEND apps
-    fail
-    pass
+add_executable(test
+    pass.c
+    fail.c
+    test.c
 )
-
-# message(STATUS "yivo::Examples ----------------------")
-foreach(name ${apps})
-    add_executable(${name} ${name}.c)
-    target_link_libraries(${name} ${PROJECT_NAME})
-endforeach()
+target_link_libraries(test ${PROJECT_NAME})
+scruffy_info(test)
