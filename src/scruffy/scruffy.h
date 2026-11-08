@@ -27,7 +27,7 @@ extern "C" {
 #define SCRUFFY_RESET "\033[0m"
 
 #define SCRUFFY_MAX_TESTS 300
-#define SCRUFFY_MAX_DEBUG_MSGS 256
+#define SCRUFFY_MAX_DEBUG_MSGS (3 * SCRUFFY_MAX_TESTS)
 #define SCRUFFY_MAX_DEBUG_MSG_LEN 128
 
 // Structure to hold test metadata
