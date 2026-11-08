@@ -28,7 +28,6 @@ target_link_libraries(test-all scruffy ... other libs ...)
 
 ```c
 #include <scruffy/scruffy.h>
-#include <ipc/ipc.h>
 
 TEST(mylib, dummy) {
   EXPECT_TRUE(true);
@@ -48,7 +47,9 @@ TEST(mylib, other_thing) {
   EXPECT_FLOAT_EQ(b,c);
 }
 
-RUN_ALL()
+// true: print errors
+// false: don't print errors, just report ok/fail
+RUN_ALL(true)
 ```
 
 ## Output
@@ -132,9 +133,9 @@ Expected (p) != NULL
 - `EXPECT_EQ(int, int)`: pass if `int == int`
 - `EXPECT_FLOAT_EQ(float, float)`: pass if `float == float`
 - `EXPECT_DOUBLE_EQ(double, double)`: pass if `double == double`
-- `TEST(suite, test)`: creates a test function named 
-  `void suite_test(void)` and registers the function 
-- `RUN_ALL()`: runs all test functions and prints results
+- `TEST(suite, test)`: creates a test function named `void suite_test(void)` and registers the function 
+- `EXPECT_STREQ(actual, expected)`: compares two strings
+- `RUN_ALL(bool)`: runs all test functions and prints results if bool is `true`, doesn't if `false`
 
 
 Each macro is wrapped in a `do {...} while(0)` loop to avoid problems. 
@@ -203,12 +204,12 @@ TEST(scruffy, pointers) {
   EXPECT_NOT_NULL(p);
 }
 
-RUN_ALL();
+RUN_ALL(true);
 ```
 
 ## ToDo:
 
-- [ ] Want to print some info about system, compiler, etc. 
+- [x] Want to print some info about system, compiler, etc. 
 
 # MIT License
 

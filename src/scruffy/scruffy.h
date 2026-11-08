@@ -26,25 +26,31 @@ extern "C" {
 #define SCRUFFY_CYAN "\033[36m"   // debug
 #define SCRUFFY_RESET "\033[0m"
 
+#define SCRUFFY_MAX_TESTS 300
+
 // Structure to hold test metadata
 typedef struct {
-  const char *suite_name;
   const char *test_name;
   void (*test_func)(void);
 } TestCase;
 
+typedef struct {
+  const char *suite_name;
+  uint16_t max_test_cases;
+  TestCase test_cases[SCRUFFY_MAX_TESTS];
+} SuiteTestCase;
+
 // Global array to store test cases
-#define SCRUFFY_MAX_TESTS 300
-extern TestCase test_registry[SCRUFFY_MAX_TESTS];
+extern SuiteTestCase test_registry[SCRUFFY_MAX_TESTS];
 extern size_t test_registry_size;
 extern int total_test_count;
 extern int total_test_failures;
 extern int suite_failures;
+extern bool SCRUFFY_VERBOSE_OUTPUT;
 
-static int get_time_diff(struct timespec start, struct timespec end) {
-  return (int)((end.tv_sec - start.tv_sec) +
-               (end.tv_nsec - start.tv_nsec) / 1e3);
-}
+int get_time_diff(struct timespec start, struct timespec end);
+void push_test_case(const char* suite, TestCase testcase);
+int run_all();
 
 static
 const char* get_target() {
@@ -61,7 +67,7 @@ const char* get_target() {
   #endif
 }
 
-
+// fixme: this and test-color-message are the same
 #define TEST_MESSAGE(color, format, ...)                     \
   do {                                                       \
     printf("%s" format SCRUFFY_RESET, color, ##__VA_ARGS__); \
@@ -91,17 +97,18 @@ void print_info() {
   TEST_MESSAGE(c, "======================================\n");
 }
 
-
-
-
 // keep do loop - ensures test_failure++ is scoped with fprintf()
 #define TEST_DEBUG_MESSAGE(format, ...)                                        \
-  do {                                                                         \
+  do {         \
+    if (SCRUFFY_VERBOSE_OUTPUT) {                                          \
     printf("\n%sfile: %s line: %d %s\n", SCRUFFY_CYAN, __FILE__, __LINE__,     \
            SCRUFFY_RESET);                                                     \
     printf(format "\n", ##__VA_ARGS__);                                        \
+    } \
     total_test_failures++;                                                     \
+    suite_failures++; \
   } while (0)
+
 
 // keep do loop - I really don't know why it doesn't work without it
 #define TEST_FAIL_MESSAGE(format, ...)                                         \
@@ -114,12 +121,16 @@ void print_info() {
     printf("%s" format "%s\n", SCRUFFY_GREEN, ##__VA_ARGS__, SCRUFFY_RESET);   \
   } while (0)
 
+#define TEST_COLOR_MESSAGE(color, format, ...)                                         \
+  do {                                                                         \
+    printf("%s" format "%s\n", color, ##__VA_ARGS__, SCRUFFY_RESET);   \
+  } while (0)
+
 // Pointers comparisons -----------------------------------
 #define EXPECT_NULL(ptr)                                                       \
   do {                                                                         \
     total_test_count++;                                                        \
     if ((ptr) != NULL) {                                                       \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected %s[%p] == NULL", #ptr,ptr);                 \
     }                                                                          \
   } while (0)
@@ -128,7 +139,6 @@ void print_info() {
   do {                                                                         \
     total_test_count++;                                                        \
     if ((ptr) == NULL) {                                                       \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected %s[%p] != NULL", #ptr,ptr);                 \
     }                                                                          \
   } while (0)
@@ -138,7 +148,6 @@ void print_info() {
   do {                                                                         \
     total_test_count++;                                                        \
     if ((cond) == false) {                                                     \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected (%s) == true", #cond);                      \
     }                                                                          \
   } while (0)
@@ -147,7 +156,6 @@ void print_info() {
   do {                                                                         \
     total_test_count++;                                                        \
     if ((cond) == true) {                                                      \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected (%s) == false", #cond);                     \
     }                                                                          \
   } while (0)
@@ -156,7 +164,6 @@ void print_info() {
   do {                                                                         \
     total_test_count++;                                                        \
     if ((actual) != (expected)) {                                              \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected %s == %s, got %lld != %lld", #actual,       \
                          #expected, (long long)(actual),                       \
                          (long long)(expected));                               \
@@ -169,7 +176,6 @@ void print_info() {
     total_test_count++;                                                        \
     float epsilon = 1e-5f;                                                     \
     if (fabsf((actual) - (expected)) > epsilon) {                              \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected %s == %s, got %f != %f (diff %f > %f)",     \
                          #actual, #expected, (float)(actual),                  \
                          (float)(expected), fabsf((actual) - (expected)),      \
@@ -182,7 +188,6 @@ void print_info() {
     total_test_count++;                                                        \
     double epsilon = 1e-9;                                                     \
     if (fabs((actual) - (expected)) > epsilon) {                               \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected %s == %s, got %lf != %lf (diff %lf > %lf)", \
                          #actual, #expected, (double)(actual),                 \
                          (double)(expected), fabs((actual) - (expected)),      \
@@ -198,7 +203,6 @@ void print_info() {
     const char *e = (expected);                                                \
     if ((a == NULL && e != NULL) || (a != NULL && e == NULL) ||                \
         (a != NULL && e != NULL && strcmp(a, e) != 0)) {                       \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Expected %s == %s, got '%s' != '%s'", #actual,       \
                          #expected, (a ? a : "NULL"), (e ? e : "NULL"));       \
     }                                                                          \
@@ -211,7 +215,6 @@ void print_info() {
     const char *e = (expected);                                                \
     if ((a == NULL && e != NULL) || (a != NULL && e == NULL) ||                \
         (a != NULL && e != NULL && strcmp(a, e) != 0)) {                       \
-      suite_failures++;                                                        \
       TEST_DEBUG_MESSAGE("Assertion %s == %s failed, got '%s' != '%s'",        \
                          #actual, #expected, (a ? a : "NULL"),                 \
                          (e ? e : "NULL"));                                    \
@@ -222,10 +225,10 @@ void print_info() {
 // Test registration macro
 #define TEST(suite, name)                                                      \
   void suite##_##name(void);                                                   \
-  static TestCase test_##suite##_##name = {#suite, #name, suite##_##name};     \
+  static TestCase test_##suite##_##name = {#name, suite##_##name};             \
   __attribute__((constructor)) static void register_##suite##_##name(void) {   \
     if (test_registry_size < SCRUFFY_MAX_TESTS) {                              \
-      test_registry[test_registry_size++] = test_##suite##_##name;             \
+      push_test_case(#suite, test_##suite##_##name);                           \
     }                                                                          \
     else {                                                                     \
       fprintf(stderr, "Test registry full!\n");                                \
@@ -234,52 +237,14 @@ void print_info() {
   }                                                                            \
   void suite##_##name(void)
 
+
 // RUN_ALL macro
-#define RUN_ALL()                                                              \
-  int main(void) {                                                             \
-    total_test_count    = 0;                                                   \
-    total_test_failures = 0;                                                   \
-    suite_failures      = 0;                                                   \
-    int diff;                                                                  \
-    struct timespec start, end;                                                \
-    struct timespec total_start, total_end;                                    \
-    clock_gettime(CLOCK_MONOTONIC, &total_start);                              \
-                                                                               \
-print_info(); \
-                                                                               \
-    TEST_PASS_MESSAGE("[==========] Starting tests");                          \
-    TEST_PASS_MESSAGE("[----------] Global test environment set-up.");         \
-    for (size_t i = 0; i < test_registry_size; i++) {                          \
-      clock_gettime(CLOCK_MONOTONIC, &start);                                  \
-      TEST_PASS_MESSAGE("[ RUN      ] %s.%s", test_registry[i].suite_name,     \
-                        test_registry[i].test_name);                           \
-      test_registry[i].test_func();                                            \
-      clock_gettime(CLOCK_MONOTONIC, &end);                                    \
-      diff = get_time_diff(start, end);                                        \
-      if (total_test_failures > 0)                                             \
-        TEST_FAIL_MESSAGE("\n[  FAILED  ] %d / %d tests passed (%d usec)",     \
-                          total_test_count - total_test_failures,              \
-                          total_test_count, diff);                             \
-      else                                                                     \
-        TEST_PASS_MESSAGE("[       OK ] %d / %d tests passed (%d usec)",       \
-                          total_test_count - total_test_failures,              \
-                          total_test_count, diff);                             \
-      TEST_PASS_MESSAGE("[----------]");                                       \
-    }                                                                          \
-    TEST_PASS_MESSAGE("[----------] Global test environment tear-down");       \
-    clock_gettime(CLOCK_MONOTONIC, &total_end);                                \
-    diff = get_time_diff(total_start, total_end);                              \
-                                                                               \
-    if (total_test_failures)                                                   \
-      TEST_FAIL_MESSAGE(                                                       \
-          "[==========] %d out of %d total tests failed (%d usec total)",      \
-          total_test_failures, total_test_count, diff);                        \
-    else                                                                       \
-      TEST_PASS_MESSAGE(                                                       \
-          "[==========] %d out of %d total tests passed (%d usec total)",      \
-          total_test_count, total_test_count, diff);                           \
-    return total_test_failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;             \
-  }
+#define RUN_ALL(verbose)          \
+int main(void) {                  \
+  print_info();                   \
+  SCRUFFY_VERBOSE_OUTPUT=verbose; \
+  return run_all();               \
+}
 
 #if defined __cplusplus
 }

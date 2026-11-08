@@ -32,3 +32,15 @@ TEST(scruffy_fail, pointers) {
   p     = &a;
   EXPECT_NULL(p);
 }
+
+TEST(scruffy_fail, strings) {
+  EXPECT_STREQ("Hi", "hi");
+  EXPECT_STREQ("Hi", NULL);
+  EXPECT_STREQ(NULL, "hi");
+  EXPECT_STREQ("Hi", nullptr);
+  EXPECT_STREQ(nullptr, "hi");
+
+  const char* s = "hello there brown cow!?";
+  EXPECT_STREQ(s, "hello there brown cow");
+}
+
