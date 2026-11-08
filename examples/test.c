@@ -1,3 +1,3 @@
 #include <scruffy/scruffy.h>
 
-RUN_ALL(false);
+RUN_ALL();

@@ -27,6 +27,8 @@ extern "C" {
 #define SCRUFFY_RESET "\033[0m"
 
 #define SCRUFFY_MAX_TESTS 300
+#define SCRUFFY_MAX_DEBUG_MSGS 256
+#define SCRUFFY_MAX_DEBUG_MSG_LEN 128
 
 // Structure to hold test metadata
 typedef struct {
@@ -46,11 +48,12 @@ extern size_t test_registry_size;
 extern int total_test_count;
 extern int total_test_failures;
 extern int suite_failures;
-extern bool SCRUFFY_VERBOSE_OUTPUT;
+// extern bool SCRUFFY_VERBOSE_OUTPUT;
 
 int get_time_diff(struct timespec start, struct timespec end);
 void push_test_case(const char* suite, TestCase testcase);
 int run_all();
+void push_debug_msg(const char* msg, uint8_t size);
 
 static
 const char* get_target() {
@@ -97,18 +100,22 @@ void print_info() {
   TEST_MESSAGE(c, "======================================\n");
 }
 
-// keep do loop - ensures test_failure++ is scoped with fprintf()
-#define TEST_DEBUG_MESSAGE(format, ...)                                        \
-  do {         \
-    if (SCRUFFY_VERBOSE_OUTPUT) {                                          \
-    printf("\n%sfile: %s line: %d %s\n", SCRUFFY_CYAN, __FILE__, __LINE__,     \
-           SCRUFFY_RESET);                                                     \
-    printf(format "\n", ##__VA_ARGS__);                                        \
-    } \
-    total_test_failures++;                                                     \
-    suite_failures++; \
+#define TEST_DEBUG_MESSAGE(format, ...)                                   \
+  do {                                                                    \
+    char msg[SCRUFFY_MAX_DEBUG_MSG_LEN];                                  \
+    snprintf(msg, SCRUFFY_MAX_DEBUG_MSG_LEN,                              \
+      "%s--------------------------------------------------%s\n",         \
+      SCRUFFY_CYAN, SCRUFFY_RESET);                                       \
+    push_debug_msg(msg, SCRUFFY_MAX_DEBUG_MSG_LEN);                       \
+    snprintf(msg, SCRUFFY_MAX_DEBUG_MSG_LEN,                              \
+      "%sfile: %s line: %d %s\n", SCRUFFY_CYAN, __FILE__, __LINE__,       \
+      SCRUFFY_RESET);                                                     \
+    push_debug_msg(msg, SCRUFFY_MAX_DEBUG_MSG_LEN);                       \
+    snprintf(msg, SCRUFFY_MAX_DEBUG_MSG_LEN, format "\n", ##__VA_ARGS__); \
+    push_debug_msg(msg, SCRUFFY_MAX_DEBUG_MSG_LEN);                       \
+    total_test_failures++;                                                \
+    suite_failures++;                                                     \
   } while (0)
-
 
 // keep do loop - I really don't know why it doesn't work without it
 #define TEST_FAIL_MESSAGE(format, ...)                                         \
@@ -121,9 +128,9 @@ void print_info() {
     printf("%s" format "%s\n", SCRUFFY_GREEN, ##__VA_ARGS__, SCRUFFY_RESET);   \
   } while (0)
 
-#define TEST_COLOR_MESSAGE(color, format, ...)                                         \
+#define TEST_COLOR_MESSAGE(color, format, ...)                                 \
   do {                                                                         \
-    printf("%s" format "%s\n", color, ##__VA_ARGS__, SCRUFFY_RESET);   \
+    printf("%s" format "%s\n", color, ##__VA_ARGS__, SCRUFFY_RESET);           \
   } while (0)
 
 // Pointers comparisons -----------------------------------
@@ -239,11 +246,10 @@ void print_info() {
 
 
 // RUN_ALL macro
-#define RUN_ALL(verbose)          \
-int main(void) {                  \
-  print_info();                   \
-  SCRUFFY_VERBOSE_OUTPUT=verbose; \
-  return run_all();               \
+#define RUN_ALL()     \
+int main(void) {      \
+  print_info();       \
+  return run_all();   \
 }
 
 #if defined __cplusplus

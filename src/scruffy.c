@@ -11,6 +11,22 @@ bool SCRUFFY_VERBOSE_OUTPUT = false;
 
 SuiteTestCase test_registry[SCRUFFY_MAX_TESTS];
 
+
+typedef struct {
+  char msgs[SCRUFFY_MAX_DEBUG_MSGS][SCRUFFY_MAX_DEBUG_MSG_LEN];
+  const uint16_t max_msgs;
+  uint16_t num_msgs;
+} scruffy_debug_t;
+
+static scruffy_debug_t debug = {.max_msgs=SCRUFFY_MAX_DEBUG_MSGS, .num_msgs=0};
+
+
+void push_debug_msg(const char* msg, uint8_t size) {
+  if (debug.num_msgs == SCRUFFY_MAX_DEBUG_MSGS) return;
+  size = (size < SCRUFFY_MAX_DEBUG_MSG_LEN)? size : SCRUFFY_MAX_DEBUG_MSG_LEN-1;
+  strncpy(debug.msgs[debug.num_msgs++], msg, size);
+}
+
 int get_time_diff(struct timespec start, struct timespec end) {
   return (int)((end.tv_sec - start.tv_sec) * 1e6 +
                (end.tv_nsec - start.tv_nsec) / 1e3);
@@ -110,6 +126,12 @@ int run_all(void) {
   else                                                                  
     TEST_PASS_MESSAGE(                                                  
         "[==========] %d out of %d total tests passed (%d usec total)", 
-        total_test_count, total_test_count, diff);                      
+        total_test_count, total_test_count, diff);
+  
+  if (debug.num_msgs > 0) {
+    printf("\n%sErrors Found:%s\n", SCRUFFY_CYAN, SCRUFFY_RESET);
+    for (int i=0; i<debug.num_msgs; ++i) printf("%s", debug.msgs[i]);
+  }
+
   return total_test_failures == 0 ? EXIT_SUCCESS : EXIT_FAILURE;        
 }
