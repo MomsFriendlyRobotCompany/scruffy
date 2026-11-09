@@ -10,9 +10,7 @@ TEST(scruffy_fail, floats) {
   EXPECT_DOUBLE_EQ(b, 12.345);
 }
 
-TEST(scruffy_fail, equals) {
-  EXPECT_EQ(1, 2);
-}
+TEST(scruffy_fail, equals) { EXPECT_EQ(1, 2); }
 
 // calling a function
 bool test_true() { return true; }
@@ -40,7 +38,6 @@ TEST(scruffy_fail, strings) {
   EXPECT_STREQ("Hi", nullptr);
   EXPECT_STREQ(nullptr, "hi");
 
-  const char* s = "hello there brown cow!?";
+  const char *s = "hello there brown cow!?";
   EXPECT_STREQ(s, "hello there brown cow");
 }
-

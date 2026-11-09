@@ -19,11 +19,7 @@ TEST(scruffy_pass, equals) {
   EXPECT_EQ(1, 1);
 }
 
-
-TEST(scruffy_pass_alt, equals) {
-  EXPECT_EQ(1, 1);
-}
-
+TEST(scruffy_pass_alt, equals) { EXPECT_EQ(1, 1); }
 
 TEST(scruffy_pass, bools) {
   EXPECT_TRUE(1 == 1);
@@ -45,6 +41,6 @@ TEST(scruffy_pass, strings) {
   EXPECT_STREQ(NULL, NULL);
   EXPECT_STREQ(nullptr, nullptr);
 
-  const char* s = "hello there brown cow!?";
+  const char *s = "hello there brown cow!?";
   EXPECT_STREQ(s, "hello there brown cow!?");
 }

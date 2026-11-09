@@ -12,12 +12,10 @@
 extern "C" {
 #endif
 
-// For environments that don't support color
-// #define RED (getenv("NO_COLOR") ? "" : "\033[31m")
-// #define GREEN (getenv("NO_COLOR") ? "" : "\033[32m")
-// #define YELLOW (getenv("NO_COLOR") ? "" : "\033[33m")
-// #define CYAN (getenv("NO_COLOR") ? "" : "\033[36m")
-// #define RESET (getenv("NO_COLOR") ? "" : "\033[0m")
+// seems to be compiler specific
+#if !defined(__FILE_NAME__)
+  #define __FILE_NAME__ __FILE__
+#endif
 
 // Color codes
 #define SCRUFFY_RED "\033[31m"    // error
@@ -30,6 +28,51 @@ extern "C" {
 #define SCRUFFY_MAX_DEBUG_MSGS (3 * SCRUFFY_MAX_TESTS)
 #define SCRUFFY_MAX_DEBUG_MSG_LEN 128
 
+// keep do loop - I really don't know why it doesn't work without it
+#define SWRAP(test)                                                            \
+  do {                                                                         \
+    test;                                                                      \
+  } while (0)
+
+// test function defines
+#define EXPECT_EQ(left, right)                                                 \
+  SWRAP(int_eq_c(__FILE_NAME__, __LINE__, #left, #right, left, right))
+#define EXPECT_TRUE(cond) SWRAP(true_c(__FILE_NAME__, __LINE__, #cond, cond))
+#define EXPECT_FALSE(cond) SWRAP(false_c(__FILE_NAME__, __LINE__, #cond, cond))
+#define EXPECT_FLOAT_EQ(left, right)                                           \
+  SWRAP(float_eq_c(__FILE_NAME__, __LINE__, #left, #right, left, right))
+#define EXPECT_DOUBLE_EQ(left, right)                                          \
+  SWRAP(double_eq_c(__FILE_NAME__, __LINE__, #left, #right, left, right))
+#define EXPECT_STREQ(left, right)                                              \
+  SWRAP(streq_c(__FILE_NAME__, __LINE__, #left, #right, left, right))
+#define EXPECT_NULL(ptr) SWRAP(null_c(__FILE_NAME__, __LINE__, #ptr, p))
+#define EXPECT_NOT_NULL(ptr) SWRAP(not_null_c(__FILE_NAME__, __LINE__, #ptr, p))
+
+// Test registration macro to build test suite and cases
+#define TEST(suite, name)                                                      \
+  void suite##_##name(void);                                                   \
+  static TestCase test_##suite##_##name = {#name, suite##_##name};             \
+  __attribute__((constructor)) static void register_##suite##_##name(void) {   \
+    if (test_registry_size < SCRUFFY_MAX_TESTS) {                              \
+      push_test_case(#suite, test_##suite##_##name);                           \
+    }                                                                          \
+    else {                                                                     \
+      fprintf(stderr, "Test registry full!\n");                                \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  }                                                                            \
+  void suite##_##name(void)
+
+// RUN_ALL macro
+#define RUN_ALL()                                                              \
+  int main(void) {                                                             \
+    scruffy_sys_info();                                                        \
+    return run_all();                                                          \
+  }
+
+//////////////////////////////////////////////////////
+// Functions and data structures
+//
 // Structure to hold test metadata
 typedef struct {
   const char *test_name;
@@ -45,212 +88,67 @@ typedef struct {
 // Global array to store test cases
 extern SuiteTestCase test_registry[SCRUFFY_MAX_TESTS];
 extern size_t test_registry_size;
-extern int total_test_count;
-extern int total_test_failures;
-extern int suite_failures;
-// extern bool SCRUFFY_VERBOSE_OUTPUT;
 
 int get_time_diff(struct timespec start, struct timespec end);
-void push_test_case(const char* suite, TestCase testcase);
+void push_test_case(const char *suite, TestCase testcase);
+void push_debug_msg(const char *msg, uint8_t size);
 int run_all();
-void push_debug_msg(const char* msg, uint8_t size);
 
-static
-const char* get_target() {
-  #if defined(__x86_64__) || defined(_M_X64)
-    return "Target is 64-bit Intel/AMD x86";
-  #elif defined(__i386__) || defined(_M_IX86)
-    return "Target is 32-bit Intel/AMD x86";
-  #elif defined(__aarch64__) || defined(_M_ARM64)
-    return "Target is 64-bit ARM";
-  #elif defined(__arm__) || defined(_M_ARM)
-    return "Target is 32-bit ARM";
-  #else
-    return "Target is Uknown";
-  #endif
-}
-
-// fixme: this and test-color-message are the same
-#define TEST_MESSAGE(color, format, ...)                     \
-  do {                                                       \
-    printf("%s" format SCRUFFY_RESET, color, ##__VA_ARGS__); \
-  } while (0)
-
-static
-void print_info() {
-  const char* c = SCRUFFY_CYAN;
-  TEST_MESSAGE(c, "======================================\n");
-  #ifdef OS_INFO
-  TEST_MESSAGE(c, "%s\n", OS_INFO);
-  TEST_MESSAGE(c, "%s\n", CPU_INFO);
-  TEST_MESSAGE(c, "%s\n", RAM_INFO);
-  #endif
-
-  TEST_MESSAGE(c, "Compilers:\n");
-  #if defined(C_INFO)
-  TEST_MESSAGE(c, "  %s\n", C_INFO);
-  #endif
-  #if defined(CXX_INFO)
-  TEST_MESSAGE(c, "  %s\n", CXX_INFO);
-  #endif
-
-  #if __clang__
-  TEST_MESSAGE(c, "%s\n", get_target());
-  #endif
-  TEST_MESSAGE(c, "======================================\n");
-}
-
-#define TEST_DEBUG_MESSAGE(format, ...)                                   \
-  do {                                                                    \
-    char msg[SCRUFFY_MAX_DEBUG_MSG_LEN];                                  \
-    snprintf(msg, SCRUFFY_MAX_DEBUG_MSG_LEN,                              \
-      "%s--------------------------------------------------%s\n",         \
-      SCRUFFY_CYAN, SCRUFFY_RESET);                                       \
-    push_debug_msg(msg, SCRUFFY_MAX_DEBUG_MSG_LEN);                       \
-    snprintf(msg, SCRUFFY_MAX_DEBUG_MSG_LEN,                              \
-      "%sfile: %s line: %d %s\n", SCRUFFY_CYAN, __FILE__, __LINE__,       \
-      SCRUFFY_RESET);                                                     \
-    push_debug_msg(msg, SCRUFFY_MAX_DEBUG_MSG_LEN);                       \
-    snprintf(msg, SCRUFFY_MAX_DEBUG_MSG_LEN, format "\n", ##__VA_ARGS__); \
-    push_debug_msg(msg, SCRUFFY_MAX_DEBUG_MSG_LEN);                       \
-    total_test_failures++;                                                \
-    suite_failures++;                                                     \
-  } while (0)
-
-// keep do loop - I really don't know why it doesn't work without it
-#define TEST_FAIL_MESSAGE(format, ...)                                         \
-  do {                                                                         \
-    printf("%s" format "%s\n", SCRUFFY_RED, ##__VA_ARGS__, SCRUFFY_RESET);     \
-  } while (0)
-
-#define TEST_PASS_MESSAGE(format, ...)                                         \
-  do {                                                                         \
-    printf("%s" format "%s\n", SCRUFFY_GREEN, ##__VA_ARGS__, SCRUFFY_RESET);   \
-  } while (0)
-
-#define TEST_COLOR_MESSAGE(color, format, ...)                                 \
-  do {                                                                         \
-    printf("%s" format "%s\n", color, ##__VA_ARGS__, SCRUFFY_RESET);           \
-  } while (0)
-
-// Pointers comparisons -----------------------------------
-#define EXPECT_NULL(ptr)                                                       \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    if ((ptr) != NULL) {                                                       \
-      TEST_DEBUG_MESSAGE("Expected %s[%p] == NULL", #ptr,ptr);                 \
-    }                                                                          \
-  } while (0)
-
-#define EXPECT_NOT_NULL(ptr)                                                   \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    if ((ptr) == NULL) {                                                       \
-      TEST_DEBUG_MESSAGE("Expected %s[%p] != NULL", #ptr,ptr);                 \
-    }                                                                          \
-  } while (0)
-
-// Binary -------------------------------------------------
-#define EXPECT_TRUE(cond)                                                      \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    if ((cond) == false) {                                                     \
-      TEST_DEBUG_MESSAGE("Expected (%s) == true", #cond);                      \
-    }                                                                          \
-  } while (0)
-
-#define EXPECT_FALSE(cond)                                                     \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    if ((cond) == true) {                                                      \
-      TEST_DEBUG_MESSAGE("Expected (%s) == false", #cond);                     \
-    }                                                                          \
-  } while (0)
-
-#define EXPECT_EQ(actual, expected)                                            \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    if ((actual) != (expected)) {                                              \
-      TEST_DEBUG_MESSAGE("Expected %s == %s, got %lld != %lld", #actual,       \
-                         #expected, (long long)(actual),                       \
-                         (long long)(expected));                               \
-    }                                                                          \
-  } while (0)
-
+// Integer comparison -------------------------------------
+void int_eq_c(const char *file, int line, const char *l, const char *r,
+              long long left, long long right);
+// Boolean comparison -------------------------------------
+void true_c(const char *file, int line, const char *var, bool cond);
+void false_c(const char *file, int line, const char *var, bool cond);
 // Floating-point equality --------------------------------
-#define EXPECT_FLOAT_EQ(actual, expected)                                      \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    float epsilon = 1e-5f;                                                     \
-    if (fabsf((actual) - (expected)) > epsilon) {                              \
-      TEST_DEBUG_MESSAGE("Expected %s == %s, got %f != %f (diff %f > %f)",     \
-                         #actual, #expected, (float)(actual),                  \
-                         (float)(expected), fabsf((actual) - (expected)),      \
-                         epsilon);                                             \
-    }                                                                          \
-  } while (0)
+void float_eq_c(const char *file, int line, const char *l, const char *r,
+                float left, float right);
+void double_eq_c(const char *file, int line, const char *exp, const char *act,
+                 double actual, double expected);
+// String comparison --------------------------------------
+void streq_c(const char *file, int line, const char *l, const char *r,
+             const char *left, const char *right);
+// Pointers comparisons -----------------------------------
+void null_c(const char *file, int line, const char *ptr, void *p);
+void not_null_c(const char *file, int line, const char *ptr, void *p);
 
-#define EXPECT_DOUBLE_EQ(actual, expected)                                     \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    double epsilon = 1e-9;                                                     \
-    if (fabs((actual) - (expected)) > epsilon) {                               \
-      TEST_DEBUG_MESSAGE("Expected %s == %s, got %lf != %lf (diff %lf > %lf)", \
-                         #actual, #expected, (double)(actual),                 \
-                         (double)(expected), fabs((actual) - (expected)),      \
-                         epsilon);                                             \
-    }                                                                          \
-  } while (0)
+//////////////////////////////////////////////////////
+// These stay in header so #defines work correctely
+//
 
-// Strings ------------------------------------------------
-#define EXPECT_STREQ(actual, expected)                                         \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    const char *a = (actual);                                                  \
-    const char *e = (expected);                                                \
-    if ((a == NULL && e != NULL) || (a != NULL && e == NULL) ||                \
-        (a != NULL && e != NULL && strcmp(a, e) != 0)) {                       \
-      TEST_DEBUG_MESSAGE("Expected %s == %s, got '%s' != '%s'", #actual,       \
-                         #expected, (a ? a : "NULL"), (e ? e : "NULL"));       \
-    }                                                                          \
-  } while (0)
+static void scruffy_sys_info() {
+  printf("%s======================================\n", SCRUFFY_CYAN);
+#ifdef OS_INFO
+  printf("%s\n", OS_INFO);
+  printf("%s\n", CPU_INFO);
+  printf("%s\n", RAM_INFO);
+#endif
 
-#define ASSERT_STREQ(actual, expected)                                         \
-  do {                                                                         \
-    total_test_count++;                                                        \
-    const char *a = (actual);                                                  \
-    const char *e = (expected);                                                \
-    if ((a == NULL && e != NULL) || (a != NULL && e == NULL) ||                \
-        (a != NULL && e != NULL && strcmp(a, e) != 0)) {                       \
-      TEST_DEBUG_MESSAGE("Assertion %s == %s failed, got '%s' != '%s'",        \
-                         #actual, #expected, (a ? a : "NULL"),                 \
-                         (e ? e : "NULL"));                                    \
-      exit(EXIT_FAILURE);                                                      \
-    }                                                                          \
-  } while (0)
+  printf("Compilers:\n");
+#if defined(C_INFO)
+  printf("  %s\n", C_INFO);
+#endif
+#if defined(CXX_INFO)
+  printf("  %s\n", CXX_INFO);
+#endif
 
-// Test registration macro
-#define TEST(suite, name)                                                      \
-  void suite##_##name(void);                                                   \
-  static TestCase test_##suite##_##name = {#name, suite##_##name};             \
-  __attribute__((constructor)) static void register_##suite##_##name(void) {   \
-    if (test_registry_size < SCRUFFY_MAX_TESTS) {                              \
-      push_test_case(#suite, test_##suite##_##name);                           \
-    }                                                                          \
-    else {                                                                     \
-      fprintf(stderr, "Test registry full!\n");                                \
-      exit(EXIT_FAILURE);                                                      \
-    }                                                                          \
-  }                                                                            \
-  void suite##_##name(void)
-
-
-// RUN_ALL macro
-#define RUN_ALL()     \
-int main(void) {      \
-  print_info();       \
-  return run_all();   \
+#if __clang__
+  #if defined(__x86_64__) || defined(_M_X64)
+  const char *target = "Target is 64-bit Intel/AMD x86";
+  #elif defined(__i386__) || defined(_M_IX86)
+  const char *target = "Target is 32-bit Intel/AMD x86";
+  #elif defined(__aarch64__) || defined(_M_ARM64)
+  const char *target = "Target is 64-bit ARM";
+  #elif defined(__arm__) || defined(_M_ARM)
+  const char *target = "Target is 32-bit ARM";
+  #else
+  const char *target = "Target is Uknown";
+  #endif
+  printf("%s\n", target);
+#endif
+  printf("======================================\n%s", SCRUFFY_RESET);
 }
+//////////////////////////////////////////////////////
 
 #if defined __cplusplus
 }
