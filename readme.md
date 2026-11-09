@@ -47,9 +47,7 @@ TEST(mylib, other_thing) {
   EXPECT_FLOAT_EQ(b,c);
 }
 
-// true: print errors
-// false: don't print errors, just report ok/fail
-RUN_ALL(true)
+RUN_ALL()
 ```
 
 ## Output
@@ -57,71 +55,136 @@ RUN_ALL(true)
 Success
 
 ```bash
+======================================
+macOS 27.0.1 [26A434]
+CPU: 12 core Apple M4 Pro
+RAM: 49152 MB
+Compilers:
+  C23 AppleClang: /usr/bin/cc
+Target is 64-bit ARM
+======================================
 [==========] Starting tests
-[----------] Global test environment set-up.
-[ RUN      ] scruffy.floats
-[       OK ] 2 / 2 tests passed (1 usec)
+[//////////] Suite scruffy_pass with 5 test cases
 [----------]
-[ RUN      ] scruffy.equals
-[       OK ] 3 / 3 tests passed (1 usec)
+[ RUN      ]  1. scruffy_pass.floats
+[       OK ]     Tests passed 4 (1 usec)
 [----------]
-[ RUN      ] scruffy.bools
-[       OK ] 5 / 5 tests passed (2 usec)
+[ RUN      ]  2. scruffy_pass.equals
+[       OK ]     Tests passed 3 (0 usec)
 [----------]
-[ RUN      ] scruffy.pointers
-[       OK ] 7 / 7 tests passed (1 usec)
+[ RUN      ]  3. scruffy_pass.bools
+[       OK ]     Tests passed 3 (1 usec)
 [----------]
-[----------] Global test environment tear-down
-[==========] 7 out of 7 total tests passed (28 usec total)
+[ RUN      ]  4. scruffy_pass.pointers
+[       OK ]     Tests passed 2 (0 usec)
+[----------]
+[ RUN      ]  5. scruffy_pass.strings
+[       OK ]     Tests passed 4 (0 usec)
+[----------]
+[//////////] Suite scruffy_pass_alt with 1 test cases
+[----------]
+[ RUN      ]  1. scruffy_pass_alt.equals
+[       OK ]     Tests passed 1 (0 usec)
+[----------]
+[//////////] End all tests.
+[==========] 17 out of 17 total tests passed (34 usec total)
 ```
 
 Failure
 
 ```bash
+======================================
+macOS 27.0.1 [26A434]
+CPU: 12 core Apple M4 Pro
+RAM: 49152 MB
+Compilers:
+  C23 AppleClang: /usr/bin/cc
+Target is 64-bit ARM
+======================================
 [==========] Starting tests
-[----------] Global test environment set-up.
-[ RUN      ] scruffy.floats
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 7 
-Expected a == 3.1f, got 3.120000 != 3.100000 (diff 0.020000 > 0.000010)
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 10 
-Expected b == 12.345, got 12.345670 != 12.345000 (diff 0.000670 > 0.000000)
-
-[  FAILED  ] 0 / 2 tests passed (9 usec)
+[//////////] Suite scruffy_pass with 5 test cases
 [----------]
-[ RUN      ] scruffy.equals
+[ RUN      ]  1. scruffy_pass.floats
+[       OK ]     Tests passed 4 (0 usec)
+[----------]
+[ RUN      ]  2. scruffy_pass.equals
+[       OK ]     Tests passed 3 (0 usec)
+[----------]
+[ RUN      ]  3. scruffy_pass.bools
+[       OK ]     Tests passed 3 (0 usec)
+[----------]
+[ RUN      ]  4. scruffy_pass.pointers
+[       OK ]     Tests passed 2 (0 usec)
+[----------]
+[ RUN      ]  5. scruffy_pass.strings
+[       OK ]     Tests passed 4 (0 usec)
+[----------]
+[//////////] Suite scruffy_pass_alt with 1 test cases
+[----------]
+[ RUN      ]  1. scruffy_pass_alt.equals
+[       OK ]     Tests passed 1 (0 usec)
+[----------]
+[//////////] Suite scruffy_fail with 5 test cases
+[----------]
+[ RUN      ]  1. scruffy_fail.floats
+[     FAIL ]     Tests failed 2 (7 usec)
+[----------]
+[ RUN      ]  2. scruffy_fail.equals
+[     FAIL ]     Tests failed 2 (1 usec)
+[----------]
+[ RUN      ]  3. scruffy_fail.bools
+[     FAIL ]     Tests failed 3 (1 usec)
+[----------]
+[ RUN      ]  4. scruffy_fail.pointers
+[     FAIL ]     Tests failed 2 (1 usec)
+[----------]
+[ RUN      ]  5. scruffy_fail.strings
+[     FAIL ]     Tests failed 6 (6 usec)
+[----------]
+[//////////] End all tests.
+[==========] 15 out of 32 total tests failed (123 usec total)
 
-file: /Users/kevin/github/scruffy/examples/fail.c line: 14 
+Errors Found:
+--------------------------------------------------
+file: fail.c line: 7 
+Expected a == 3.1f, got 3.120000 != 3.100000 (diff 0.020000 > 0.000000)--------------------------------------------------
+file: fail.c line: 10 
+Expected b == 12.345, got 12.345670 != 12.345000 (diff 0.000670 > 0.000000)--------------------------------------------------
+file: fail.c line: 13 
 Expected 1 == 2, got 1 != 2
-
-[  FAILED  ] 0 / 3 tests passed (3 usec)
-[----------]
-[ RUN      ] scruffy.bools
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 22 
+--------------------------------------------------
+file: fail.c line: 20 
 Expected (test_true()) == false
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 23 
+--------------------------------------------------
+file: fail.c line: 21 
 Expected (1 == 2) == true
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 24 
+--------------------------------------------------
+file: fail.c line: 22 
 Expected (1 == 1) == false
-
-[  FAILED  ] 1 / 7 tests passed (4 usec)
-[----------]
-[ RUN      ] scruffy.pointers
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 29 
-Expected (p) == NULL
-
-file: /Users/kevin/github/scruffy/examples/fail.c line: 33 
-Expected (p) != NULL
-
-[  FAILED  ] 1 / 9 tests passed (6 usec)
-[----------]
-[----------] Global test environment tear-down
-[==========] 8 out of 9 total tests failed (40 usec total)
+--------------------------------------------------
+file: fail.c line: 27 
+Expected p[0x0] != NULL
+--------------------------------------------------
+file: fail.c line: 31 
+Expected p[0x16d5a2d74] == NULL
+--------------------------------------------------
+file: fail.c line: 35 
+Expected "Hi" == "hi", got 'Hi' != 'hi'
+--------------------------------------------------
+file: fail.c line: 36 
+Expected "Hi" == NULL, got 'Hi' != 'NULL'
+--------------------------------------------------
+file: fail.c line: 37 
+Expected NULL == "hi", got 'NULL' != 'hi'
+--------------------------------------------------
+file: fail.c line: 38 
+Expected "Hi" == nullptr, got 'Hi' != 'NULL'
+--------------------------------------------------
+file: fail.c line: 39 
+Expected nullptr == "hi", got 'NULL' != 'hi'
+--------------------------------------------------
+file: fail.c line: 42 
+Expected s == "hello there brown cow", got 'hello there brown cow!?' != 'hello there brown cow'
 ```
 
 ## Tests
@@ -135,7 +198,7 @@ Expected (p) != NULL
 - `EXPECT_DOUBLE_EQ(double, double)`: pass if `double == double`
 - `TEST(suite, test)`: creates a test function named `void suite_test(void)` and registers the function 
 - `EXPECT_STREQ(actual, expected)`: compares two strings
-- `RUN_ALL(bool)`: runs all test functions and prints results if bool is `true`, doesn't if `false`
+- `RUN_ALL()`: runs all test functions and prints failure descriptions at end
 
 
 Each macro is wrapped in a `do {...} while(0)` loop to avoid problems. 
@@ -209,7 +272,7 @@ RUN_ALL(true);
 
 ## ToDo:
 
-- [x] Want to print some info about system, compiler, etc. 
+- [ ] Work more on test cases and suite tests status to make it clearer
 
 # MIT License
 
